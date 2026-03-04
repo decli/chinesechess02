@@ -50,17 +50,11 @@ class BoardRenderer {
         const container = this.canvas.parentElement;
         const maxWidth = container ? container.clientWidth - 20 : 600;
         const idealWidth = this.cellSize * 8 + this.padding * 2;
-        const idealHeight = this.cellSize * 9 + this.padding * 2;
-
-        // 基于视口高度计算，让棋盘尽量上下填满
-        const availableHeight = window.innerHeight - 36; // 上下留少量 padding
-        const scaleW = Math.min(1, maxWidth / idealWidth);
-        const scaleH = Math.min(1, availableHeight / idealHeight);
-        const scale = Math.min(scaleW, scaleH);
+        const scale = Math.min(1, maxWidth / idealWidth);
 
         this.scale = scale;
         this.canvas.width = idealWidth * scale;
-        this.canvas.height = idealHeight * scale;
+        this.canvas.height = (this.cellSize * 9 + this.padding * 2) * scale;
         this.canvas.style.width = this.canvas.width + 'px';
         this.canvas.style.height = this.canvas.height + 'px';
     }
