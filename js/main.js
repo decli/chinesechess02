@@ -177,7 +177,6 @@ class XiangqiApp {
         this._clearSelection();
         this.board.setLastMove({ fr, fc, tr, tc });
         this._addMoveToHistory(moveRecord);
-        this._announceMove(moveRecord);
         this._updateCheckHighlight();
         this._render();
         this._autoSave();
@@ -515,30 +514,14 @@ class XiangqiApp {
         if (!this.soundEnabled) return;
         if (!('speechSynthesis' in window)) return;
 
-        const side = getSide(moveRecord.piece);
-        const sideText = side === RED ? '红方' : '黑方';
-        const moveText = this.game.getMoveText(moveRecord);
+        const text = this._generateFunnyComment(moveRecord);
 
-        let text = `${sideText}，${moveText}`;
-
-        // 附加将军/结束提示
-        if (this.game.status === 'red_win') {
-            text += '，红方获胜！';
-        } else if (this.game.status === 'black_win') {
-            text += '，黑方获胜！';
-        } else if (this.game.status === 'draw') {
-            text += '，和棋！';
-        } else if (this.game.isCurrentInCheck()) {
-            text += '，将军！';
-        }
-
-        // 取消之前的语音
         window.speechSynthesis.cancel();
 
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'zh-CN';
-        utterance.rate = 0.95;
-        utterance.pitch = 1.0;
+        utterance.rate = 1.0;
+        utterance.pitch = 1.1;
         utterance.volume = 1.0;
 
         // 尝试选择中文语音
@@ -547,6 +530,71 @@ class XiangqiApp {
         if (zhVoice) utterance.voice = zhVoice;
 
         window.speechSynthesis.speak(utterance);
+    }
+
+    _generateFunnyComment(moveRecord) {
+        const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+        const pieceType = Math.abs(moveRecord.piece);
+        const hasCaptured = moveRecord.captured !== PIECE.EMPTY;
+
+        // 游戏结束
+        if (this.game.status === 'red_win' || this.game.status === 'black_win') {
+            return pick([
+                '哈哈哈，我赢了！你输了！下次好好练练再来挑战我！',
+                '胜利！太爽了！你甘心吗？',
+                '我赢啦！厉害吧！',
+                '哎呀，你败了！要不要再来一局？'
+            ]);
+        }
+        if (this.game.status === 'draw') {
+            return pick([
+                '平局？好吧，我让着你，算你没输！',
+                '和棋了，下次我要认真打！'
+            ]);
+        }
+
+        let phrase = '';
+        switch (pieceType) {
+            case 4: // 马
+                phrase = hasCaptured
+                    ? pick(['哒哒哒！我骑马踩过来，踢走你的棋了！', '马儿绕个弯，直接踢飞你！', '马来了，挡我者亡！'])
+                    : pick(['我跑马！日字形走位，看你往哪跑！', '骑马出发，溜了溜了！', '马走日，你怕了吗？']);
+                break;
+            case 3: // 象/相
+                phrase = hasCaptured
+                    ? pick(['我飞象过来，顺手吃掉你一个！', '象腾空跳起，踩中了！'])
+                    : pick(['我飞象！大象起飞了！', '象走田格，稳如老狗！', '飞象，占个好位置！']);
+                break;
+            case 6: // 炮
+                phrase = hasCaptured
+                    ? pick(['轰！我用炮打你了！疼不疼？', '砰的一声，炮轰上去了！', '我要用炮打你了啊！轰！'])
+                    : pick(['炮先潜伏着，等你上钩！', '我的炮占好位置了，你要小心哦！', '炮在后面盯着你，你慌了没？']);
+                break;
+            case 5: // 车
+                phrase = hasCaptured
+                    ? pick(['车来了，直接碾过去，你挡不住的！', '我的车横行霸道，你这个棋被我吃掉了！', '车不让路，撞翻你！'])
+                    : pick(['车来了！让开让开！', '我的车要冲过来啦！闪开！', '车走直线，霸气侧漏！']);
+                break;
+            case 2: // 仕/士
+                phrase = pick(['仕来护主！', '保护将帅，这是我的职责！', '仕挡一挡，稳住！']);
+                break;
+            case 1: // 帅/将
+                phrase = pick(['我的将溜一步，保命要紧！', '帅也要动一动，不然危险了！', '让让，将要躲一下！']);
+                break;
+            case 7: // 兵/卒
+                phrase = hasCaptured
+                    ? pick(['小兵也会吃人！别小看我！', '别以为卒子不厉害，我吃掉你了！'])
+                    : pick(['小兵勇往直前，嗷嗷嗷！', '卒子不怕死，往前冲！', '我是小兵，但我不怂！']);
+                break;
+            default:
+                phrase = pick(['嗯，走这里，妙啊妙啊！', '想好了，就这步！', '哈哈，你猜我要干嘛？']);
+        }
+
+        if (this.game.isCurrentInCheck()) {
+            phrase += pick(['将军！你逃不了啦！', ' 将军！接招！', ' 哈！将军了！慌了吗？']);
+        }
+
+        return phrase;
     }
 
     // ============== 设置持久化 ==============
