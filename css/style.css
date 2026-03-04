@@ -54,8 +54,8 @@ body {
     font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     background: var(--bg-primary);
     color: var(--text-primary);
-    min-height: 100vh;
-    overflow-x: hidden;
+    height: 100vh;
+    overflow: hidden;
     line-height: 1.6;
 }
 
@@ -79,46 +79,27 @@ body::before {
 .app-container {
     position: relative;
     z-index: 1;
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 0 auto;
-    padding: 20px;
-    min-height: 100vh;
+    padding: 10px 16px;
+    height: 100vh;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
-/* 顶部标题栏 */
-.header {
-    text-align: center;
-    padding: 16px 0 24px;
-}
-
-.header h1 {
-    font-family: 'Noto Serif SC', serif;
-    font-size: 2.2rem;
-    font-weight: 700;
-    background: linear-gradient(135deg, #F1C40F, #E74C3C, #F1C40F);
-    background-clip: text;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    letter-spacing: 8px;
-    text-shadow: none;
-    margin-bottom: 4px;
-}
-
-.header .subtitle {
-    font-size: 0.85rem;
-    color: var(--text-muted);
-    letter-spacing: 2px;
-}
+/* 顶部标题栏（已移除，保留空选择器供兼容） */
+.header { display: none; }
 
 /* 主内容区 */
 .main-content {
     display: flex;
-    gap: 24px;
+    gap: 20px;
     flex: 1;
-    align-items: flex-start;
+    align-items: stretch;
     justify-content: center;
+    min-height: 0;
+    overflow: hidden;
 }
 
 /* 棋盘容器 */
@@ -126,9 +107,12 @@ body::before {
     flex-shrink: 0;
     background: var(--bg-card);
     border-radius: var(--radius);
-    padding: 16px;
+    padding: 8px;
     box-shadow: var(--shadow);
     border: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .board-container canvas {
@@ -139,18 +123,20 @@ body::before {
 
 /* 侧边栏 */
 .sidebar {
-    width: 320px;
+    width: 300px;
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 /* ============== 卡片组件 ============== */
 .card {
     background: var(--bg-card);
     border-radius: var(--radius);
-    padding: 20px;
+    padding: 14px 18px;
     box-shadow: var(--shadow);
     border: 1px solid var(--border-color);
 }
@@ -621,41 +607,41 @@ body::before {
 
 /* ============== 响应式 ============== */
 @media (max-width: 900px) {
+    body {
+        height: auto;
+        overflow: auto;
+    }
+
+    .app-container {
+        height: auto;
+        overflow: visible;
+        padding: 10px;
+    }
+
     .main-content {
         flex-direction: column;
         align-items: center;
+        overflow: visible;
     }
 
     .sidebar {
         width: 100%;
         max-width: 560px;
+        overflow: visible;
     }
 
     .board-container {
         width: fit-content;
     }
-
-    .header h1 {
-        font-size: 1.8rem;
-        letter-spacing: 4px;
-    }
 }
 
 @media (max-width: 480px) {
     .app-container {
-        padding: 12px;
-    }
-
-    .header {
-        padding: 10px 0 16px;
-    }
-
-    .header h1 {
-        font-size: 1.5rem;
+        padding: 8px;
     }
 
     .card {
-        padding: 14px;
+        padding: 12px;
     }
 
     .btn {
@@ -664,7 +650,7 @@ body::before {
     }
 
     .sidebar {
-        gap: 10px;
+        gap: 8px;
     }
 
     .dialog {

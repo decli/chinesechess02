@@ -44,17 +44,23 @@ class BoardRenderer {
     }
 
     /**
-     * 调整Canvas尺寸
+     * 调整Canvas尺寸（填满容器，保持棋盘比例）
      */
     resize() {
         const container = this.canvas.parentElement;
-        const maxWidth = container ? container.clientWidth - 20 : 600;
         const idealWidth = this.cellSize * 8 + this.padding * 2;
-        const scale = Math.min(1, maxWidth / idealWidth);
+        const idealHeight = this.cellSize * 9 + this.padding * 2;
+
+        const availW = container ? container.clientWidth - 16 : idealWidth;
+        const availH = container ? container.clientHeight - 16 : idealHeight;
+
+        const scaleW = availW / idealWidth;
+        const scaleH = availH / idealHeight;
+        const scale = Math.min(scaleW, scaleH);
 
         this.scale = scale;
-        this.canvas.width = idealWidth * scale;
-        this.canvas.height = (this.cellSize * 9 + this.padding * 2) * scale;
+        this.canvas.width = Math.round(idealWidth * scale);
+        this.canvas.height = Math.round(idealHeight * scale);
         this.canvas.style.width = this.canvas.width + 'px';
         this.canvas.style.height = this.canvas.height + 'px';
     }
