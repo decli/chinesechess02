@@ -13,12 +13,6 @@
 
 <body>
     <div class="app-container">
-        <!-- 标题 -->
-        <header class="header">
-            <h1>中 国 象 棋</h1>
-            <p class="subtitle">人 机 对 战</p>
-        </header>
-
         <!-- 主体 -->
         <main class="main-content">
             <!-- 棋盘 -->
@@ -88,13 +82,8 @@
                     </div>
                 </div>
 
-                <!-- 走法记录 -->
-                <div class="card">
-                    <div class="card-title">走法记录</div>
-                    <ul id="move-list" class="move-list">
-                        <li class="move-list-empty">等待开局...</li>
-                    </ul>
-                </div>
+                <!-- 走法记录（隐藏，仅保留DOM供JS使用） -->
+                <ul id="move-list" class="move-list" style="display:none"></ul>
             </aside>
         </main>
     </div>
