@@ -15,11 +15,6 @@ class XiangqiApp {
         this.aiEnabled = true;
         this.soundEnabled = true; // 语音播报开关
 
-        // 预缓存的中文语音
-        this._cachedVoice = null;
-        this._voiceReady = false;
-        this._preloadVoices();
-
         // UI 元素引用
         this.canvas = document.getElementById('board-canvas');
         this.board = new BoardRenderer(this.canvas);
@@ -32,36 +27,6 @@ class XiangqiApp {
         this._loadSettings();
         this._checkAutoSave();
         this._render();
-    }
-
-    /**
-     * 预加载语音列表并预热 TTS 引擎
-     */
-    _preloadVoices() {
-        if (!('speechSynthesis' in window)) return;
-
-        const loadVoices = () => {
-            const voices = window.speechSynthesis.getVoices();
-            if (voices.length > 0) {
-                // 优先选择 zh-CN 语音，其次 zh 开头的
-                this._cachedVoice = voices.find(v => v.lang === 'zh-CN')
-                    || voices.find(v => v.lang.startsWith('zh'))
-                    || null;
-                this._voiceReady = true;
-            }
-        };
-
-        // 有些浏览器需要异步加载语音列表
-        loadVoices();
-        if (window.speechSynthesis.onvoiceschanged !== undefined) {
-            window.speechSynthesis.onvoiceschanged = loadVoices;
-        }
-
-        // 预热 TTS 引擎（静音空白utterance，减少首次延迟）
-        const warmup = new SpeechSynthesisUtterance('');
-        warmup.volume = 0;
-        warmup.lang = 'zh-CN';
-        window.speechSynthesis.speak(warmup);
     }
 
     // ============== 事件绑定 ==============
@@ -211,12 +176,10 @@ class XiangqiApp {
 
         this._clearSelection();
         this.board.setLastMove({ fr, fc, tr, tc });
+        this._addMoveToHistory(moveRecord);
         this._updateCheckHighlight();
         this._render();
         this._autoSave();
-
-        // 玩家走子也播报语音
-        this._announcePlayerMove(moveRecord);
 
         // 检查游戏结束
         if (this.game.status !== 'playing') {
@@ -245,6 +208,7 @@ class XiangqiApp {
             const moveRecord = this.game.makeMove(move.fr, move.fc, move.tr, move.tc);
             if (moveRecord) {
                 this.board.setLastMove({ fr: move.fr, fc: move.fc, tr: move.tr, tc: move.tc });
+                this._addMoveToHistory(moveRecord);
                 this._announceMove(moveRecord);
                 this._updateCheckHighlight();
                 this._render();
@@ -278,6 +242,7 @@ class XiangqiApp {
         this.board.setCheckPos(null);
         this.board.clearHint();
         this.board.flipped = this.playerSide === BLACK;
+        document.getElementById('move-list').innerHTML = '<li class="move-list-empty">等待开局...</li>';
         this._render();
         this._updateStatus();
         this.storage.clearAutoSave();
@@ -302,6 +267,7 @@ class XiangqiApp {
         this._clearSelection();
         this.board.setLastMove(this.game.getLastMove());
         this._updateCheckHighlight();
+        this._rebuildMoveList();
         this._render();
         this._updateStatus();
         this._autoSave();
@@ -387,6 +353,7 @@ class XiangqiApp {
         this._clearSelection();
         this.board.setLastMove(this.game.getLastMove());
         this._updateCheckHighlight();
+        this._rebuildMoveList();
         this._render();
         this._updateStatus();
         this._closeAllDialogs();
@@ -416,6 +383,7 @@ class XiangqiApp {
 
             this.board.setLastMove(this.game.getLastMove());
             this._updateCheckHighlight();
+            this._rebuildMoveList();
             this._updateStatus();
 
             // 如果是 AI 的回合
@@ -475,6 +443,42 @@ class XiangqiApp {
         }
     }
 
+    _addMoveToHistory(moveRecord) {
+        const moveList = document.getElementById('move-list');
+
+        // 清除空状态占位
+        const emptyMsg = moveList.querySelector('.move-list-empty');
+        if (emptyMsg) emptyMsg.remove();
+
+        const moveNum = this.game.moveHistory.length;
+        const text = this.game.getMoveText(moveRecord);
+        const side = getSide(moveRecord.piece);
+
+        const li = document.createElement('li');
+        li.className = `move-item ${side === RED ? 'red-move' : 'black-move'}`;
+        li.innerHTML = `<span class="move-num">${moveNum}.</span> <span class="move-text">${text}</span>`;
+        moveList.appendChild(li);
+        moveList.scrollTop = moveList.scrollHeight;
+    }
+
+    _rebuildMoveList() {
+        const moveList = document.getElementById('move-list');
+        moveList.innerHTML = '';
+        if (this.game.moveHistory.length === 0) {
+            moveList.innerHTML = '<li class="move-list-empty">等待开局...</li>';
+            return;
+        }
+        for (const record of this.game.moveHistory) {
+            const moveNum = this.game.moveHistory.indexOf(record) + 1;
+            const text = this.game.getMoveText(record);
+            const side = getSide(record.piece);
+            const li = document.createElement('li');
+            li.className = `move-item ${side === RED ? 'red-move' : 'black-move'}`;
+            li.innerHTML = `<span class="move-num">${moveNum}.</span> <span class="move-text">${text}</span>`;
+            moveList.appendChild(li);
+        }
+        moveList.scrollTop = moveList.scrollHeight;
+    }
 
     _showGameOver() {
         const dialog = document.getElementById('gameover-dialog');
@@ -514,58 +518,18 @@ class XiangqiApp {
 
         window.speechSynthesis.cancel();
 
-        // 短延迟确保 cancel 后状态稳定
-        setTimeout(() => {
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'zh-CN';
-            utterance.rate = 1.1;
-            utterance.pitch = 1.1;
-            utterance.volume = 1.0;
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'zh-CN';
+        utterance.rate = 1.0;
+        utterance.pitch = 1.1;
+        utterance.volume = 1.0;
 
-            // 使用预缓存的中文语音
-            if (this._cachedVoice) {
-                utterance.voice = this._cachedVoice;
-            }
+        // 尝试选择中文语音
+        const voices = window.speechSynthesis.getVoices();
+        const zhVoice = voices.find(v => v.lang.startsWith('zh'));
+        if (zhVoice) utterance.voice = zhVoice;
 
-            window.speechSynthesis.speak(utterance);
-        }, 50);
-    }
-
-    /**
-     * 玩家走子的简短语音播报
-     */
-    _announcePlayerMove(moveRecord) {
-        if (!this.soundEnabled) return;
-        if (!('speechSynthesis' in window)) return;
-
-        const text = this.game.getMoveText(moveRecord);
-        let announcement = text;
-
-        // 将军时加一句
-        if (this.game.isCurrentInCheck()) {
-            announcement += '，将军！';
-        }
-        // 吃子时简短提示
-        if (moveRecord.captured !== PIECE.EMPTY) {
-            const capturedName = PIECE_NAMES[moveRecord.captured] || '';
-            announcement += `，吃${capturedName}`;
-        }
-
-        window.speechSynthesis.cancel();
-
-        setTimeout(() => {
-            const utterance = new SpeechSynthesisUtterance(announcement);
-            utterance.lang = 'zh-CN';
-            utterance.rate = 1.2;
-            utterance.pitch = 1.0;
-            utterance.volume = 1.0;
-
-            if (this._cachedVoice) {
-                utterance.voice = this._cachedVoice;
-            }
-
-            window.speechSynthesis.speak(utterance);
-        }, 50);
+        window.speechSynthesis.speak(utterance);
     }
 
     _generateFunnyComment(moveRecord) {

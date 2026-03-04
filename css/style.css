@@ -81,36 +81,54 @@ body::before {
     z-index: 1;
     max-width: 1200px;
     margin: 0 auto;
-    padding: 8px 20px;
-    height: 100vh;
+    padding: 20px;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
 }
 
+/* 顶部标题栏 */
+.header {
+    text-align: center;
+    padding: 16px 0 24px;
+}
 
+.header h1 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 2.2rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #F1C40F, #E74C3C, #F1C40F);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 8px;
+    text-shadow: none;
+    margin-bottom: 4px;
+}
+
+.header .subtitle {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    letter-spacing: 2px;
+}
 
 /* 主内容区 */
 .main-content {
     display: flex;
     gap: 24px;
     flex: 1;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
-    min-height: 0;
 }
 
 /* 棋盘容器 */
 .board-container {
-    flex-shrink: 1;
+    flex-shrink: 0;
     background: var(--bg-card);
     border-radius: var(--radius);
-    padding: 10px;
+    padding: 16px;
     box-shadow: var(--shadow);
     border: 1px solid var(--border-color);
-    display: flex;
-    align-items: center;
-    justify-content: center;
 }
 
 .board-container canvas {
@@ -377,7 +395,65 @@ body::before {
     font-size: 1.2rem;
 }
 
+/* ============== 走法记录 ============== */
+.move-list {
+    list-style: none;
+    max-height: 260px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
 
+.move-list::-webkit-scrollbar {
+    width: 5px;
+}
+
+.move-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.move-list::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 3px;
+}
+
+.move-list::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+}
+
+.move-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    transition: var(--transition);
+}
+
+.move-item:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.move-item .move-num {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    min-width: 30px;
+}
+
+.move-item.red-move .move-text {
+    color: var(--red-light);
+}
+
+.move-item.black-move .move-text {
+    color: var(--text-secondary);
+}
+
+.move-list-empty {
+    text-align: center;
+    color: var(--text-muted);
+    padding: 20px 0;
+    font-size: 0.9rem;
+}
 
 /* ============== 对话框 ============== */
 .dialog-overlay {
@@ -545,12 +621,6 @@ body::before {
 
 /* ============== 响应式 ============== */
 @media (max-width: 900px) {
-    .app-container {
-        height: auto;
-        min-height: 100vh;
-        overflow: auto;
-    }
-
     .main-content {
         flex-direction: column;
         align-items: center;
@@ -564,11 +634,24 @@ body::before {
     .board-container {
         width: fit-content;
     }
+
+    .header h1 {
+        font-size: 1.8rem;
+        letter-spacing: 4px;
+    }
 }
 
 @media (max-width: 480px) {
     .app-container {
-        padding: 6px;
+        padding: 12px;
+    }
+
+    .header {
+        padding: 10px 0 16px;
+    }
+
+    .header h1 {
+        font-size: 1.5rem;
     }
 
     .card {
